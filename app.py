@@ -10,10 +10,38 @@ import os
 st.set_page_config(page_title="Business Dashboard", layout="wide")
 
 # ===============================
-# DARK THEME FOR CHARTS
+# CUSTOM CSS (PREMIUM LOOK)
+# ===============================
+st.markdown("""
+<style>
+.main {
+    background-color: #0E1117;
+}
+h1, h2, h3 {
+    color: #FFFFFF;
+}
+.card {
+    background: #1c1f26;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.metric {
+    font-size: 28px;
+    font-weight: bold;
+}
+.subtext {
+    color: #9aa0a6;
+    font-size: 14px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ===============================
+# STYLE
 # ===============================
 plt.style.use('dark_background')
-sns.set_style("dark")
+sns.set_style("darkgrid")
 sns.set_palette("coolwarm")
 
 # ===============================
@@ -35,32 +63,25 @@ df['year'] = df['order_date'].dt.year
 df['month'] = df['order_date'].dt.month
 
 # ===============================
-# TITLE
+# HEADER
 # ===============================
-st.title("📊 Smart Business Dashboard")
-st.markdown("### Real-time business insights 💡")
+st.markdown("## 📊 Business Intelligence Dashboard")
+st.markdown("### Real-time insights for smarter decisions")
 
 st.markdown("---")
 
 # ===============================
-# SIDEBAR FILTERS
+# SIDEBAR
 # ===============================
 st.sidebar.header("🔍 Filters")
 
 years = sorted(df['year'].dropna().unique())
 
-year = st.sidebar.selectbox(
-    "Select Year",
-    ["All"] + list(years)
-)
-
-region = st.sidebar.selectbox(
-    "Select Region",
-    ["All"] + list(df['region'].dropna().unique())
-)
+year = st.sidebar.selectbox("Select Year", ["All"] + list(years))
+region = st.sidebar.selectbox("Select Region", ["All"] + list(df['region'].dropna().unique()))
 
 # ===============================
-# APPLY FILTERS
+# FILTER DATA
 # ===============================
 filtered_df = df.copy()
 
@@ -71,7 +92,7 @@ if region != "All":
     filtered_df = filtered_df[filtered_df['region'] == region]
 
 # ===============================
-# KPIs
+# KPIs (PREMIUM CARDS)
 # ===============================
 total_sales = round(filtered_df['sales'].sum(), 2)
 total_profit = round(filtered_df['profit'].sum(), 2)
@@ -79,88 +100,118 @@ total_orders = filtered_df.shape[0]
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric("💰 Total Sales", f"${total_sales}")
-col2.metric("📈 Total Profit", f"${total_profit}")
-col3.metric("🧾 Total Orders", total_orders)
+with col1:
+    st.markdown(f"""
+    <div class="card">
+        <div class="subtext">Total Sales</div>
+        <div class="metric">${total_sales}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("---")
+with col2:
+    st.markdown(f"""
+    <div class="card">
+        <div class="subtext">Total Profit</div>
+        <div class="metric">${total_profit}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="card">
+        <div class="subtext">Total Orders</div>
+        <div class="metric">{total_orders}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("## 📈 Performance Overview")
 
 # ===============================
+# LAYOUT (2 COLUMN GRID)
+# ===============================
+left, right = st.columns(2)
+
+# -------------------------------
 # SALES TREND
-# ===============================
-st.subheader("📅 Sales Trend")
+# -------------------------------
+with left:
+    st.subheader("Sales Trend")
 
-sales_trend = filtered_df.groupby('month')['sales'].sum()
+    sales_trend = filtered_df.groupby('month')['sales'].sum()
 
-fig1, ax1 = plt.subplots()
-sns.lineplot(
-    x=sales_trend.index,
-    y=sales_trend.values,
-    marker='o',
-    linewidth=2.5,
-    ax=ax1
-)
+    fig1, ax1 = plt.subplots()
+    sns.lineplot(
+        x=sales_trend.index,
+        y=sales_trend.values,
+        marker='o',
+        linewidth=3,
+        ax=ax1
+    )
 
-ax1.set_title("Sales Trend", color='white')
-ax1.set_xlabel("Month")
-ax1.set_ylabel("Sales")
+    ax1.set_xlabel("Month")
+    ax1.set_ylabel("Sales")
 
-st.pyplot(fig1)
+    st.pyplot(fig1)
 
-# ===============================
-# PROFIT BY REGION
-# ===============================
-st.subheader("🌍 Profit by Region")
+# -------------------------------
+# REGION PROFIT
+# -------------------------------
+with right:
+    st.subheader("Profit by Region")
 
-region_profit = filtered_df.groupby('region')['profit'].sum()
+    region_profit = filtered_df.groupby('region')['profit'].sum()
 
-fig2, ax2 = plt.subplots()
-sns.barplot(
-    x=region_profit.index,
-    y=region_profit.values,
-    palette="viridis",
-    ax=ax2
-)
+    fig2, ax2 = plt.subplots()
+    sns.barplot(
+        x=region_profit.index,
+        y=region_profit.values,
+        palette="viridis",
+        ax=ax2
+    )
 
-plt.xticks(rotation=45)
-ax2.set_title("Profit by Region", color='white')
+    plt.xticks(rotation=45)
 
-st.pyplot(fig2)
-
-# ===============================
-# DISCOUNT VS PROFIT
-# ===============================
-st.subheader("💸 Discount vs Profit")
-
-fig3, ax3 = plt.subplots()
-sns.scatterplot(
-    x=filtered_df['discount'],
-    y=filtered_df['profit'],
-    hue=filtered_df['region'],
-    palette="coolwarm",
-    ax=ax3
-)
-
-ax3.set_title("Discount vs Profit", color='white')
-
-st.pyplot(fig3)
+    st.pyplot(fig2)
 
 # ===============================
+# SECOND ROW
+# ===============================
+left2, right2 = st.columns(2)
+
+# -------------------------------
+# SCATTER
+# -------------------------------
+with left2:
+    st.subheader("Discount vs Profit")
+
+    fig3, ax3 = plt.subplots()
+    sns.scatterplot(
+        x=filtered_df['discount'],
+        y=filtered_df['profit'],
+        hue=filtered_df['region'],
+        palette="coolwarm",
+        ax=ax3
+    )
+
+    st.pyplot(fig3)
+
+# -------------------------------
 # TOP PRODUCTS
-# ===============================
-st.subheader("🏆 Top 5 Products")
+# -------------------------------
+with right2:
+    st.subheader("Top Products")
 
-top_products = (
-    filtered_df.groupby('product_name')['sales']
-    .sum()
-    .sort_values(ascending=False)
-    .head(5)
-)
+    top_products = (
+        filtered_df.groupby('product_name')['sales']
+        .sum()
+        .sort_values(ascending=False)
+        .head(5)
+    )
 
-st.dataframe(top_products)
+    st.dataframe(top_products)
 
 # ===============================
 # FOOTER
 # ===============================
 st.markdown("---")
-st.caption("Built with ❤️ using Streamlit | Data Analyst Portfolio Project")
+st.caption("🚀 Built by Mayank | Data Analyst Portfolio Project")
