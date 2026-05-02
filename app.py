@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-df = pd.read_csv("data/SuperStoreOrders.csv")
+df = pd.read_csv("data/SuperStoreOrders.csv",encoding='latin1')
 df.columns = df.columns.str.strip().str.lower().str.replace(" ","-")
 df['order_date'] = pd.to_datetime(df['order_date'],dayfirst=True,errors='coerce')
 df = df.dropna(subset=['order_date'])
