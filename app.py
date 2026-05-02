@@ -11,7 +11,7 @@ df['year']= df['order_date'].dt.year
 df['day']= df['order_date'].dt.day
 
 st.title("smart buisness dashboard")
-st.write("Total sales:",round(df['sales'],sum(),2))
+st.write("Total sales:",round(df['sales'].sum(),2))
 st.write("Total profit:",round(df['profit'],sum(),2))
 
 st.subheader("Sales by Category")
