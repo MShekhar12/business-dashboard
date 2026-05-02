@@ -9,7 +9,7 @@ df = df.dropna(subset=['order_date'])
 df['month']= df['order_date'].dt.month
 df['year']= df['order_date'].dt.year
 df['day']= df['order_date'].dt.day
-
+df['sales'] = pd.to_numeric(df['sales'], errors='coerce')
 st.title("smart buisness dashboard")
 st.write("Total sales:",round(df['sales'].sum(),2))
 st.write("Total profit:",round(df['profit'],sum(),2))
