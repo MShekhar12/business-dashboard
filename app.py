@@ -10,6 +10,13 @@ import os
 st.set_page_config(page_title="Business Dashboard", layout="wide")
 
 # ===============================
+# DARK THEME FOR CHARTS
+# ===============================
+plt.style.use('dark_background')
+sns.set_style("dark")
+sns.set_palette("coolwarm")
+
+# ===============================
 # LOAD DATA
 # ===============================
 file_path = os.path.join("data", "SuperStoreOrders.csv")
@@ -20,19 +27,12 @@ df = pd.read_csv(file_path, encoding='latin1')
 # ===============================
 df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-# Convert types
 df['order_date'] = pd.to_datetime(df['order_date'], dayfirst=True, errors='coerce')
 df['sales'] = pd.to_numeric(df['sales'], errors='coerce')
 df['profit'] = pd.to_numeric(df['profit'], errors='coerce')
 
-# Extract date parts
 df['year'] = df['order_date'].dt.year
 df['month'] = df['order_date'].dt.month
-
-# ===============================
-# STYLE
-# ===============================
-sns.set_style("darkgrid")
 
 # ===============================
 # TITLE
@@ -47,9 +47,11 @@ st.markdown("---")
 # ===============================
 st.sidebar.header("🔍 Filters")
 
+years = sorted(df['year'].dropna().unique())
+
 year = st.sidebar.selectbox(
     "Select Year",
-    sorted(df['year'].dropna().unique())
+    ["All"] + list(years)
 )
 
 region = st.sidebar.selectbox(
@@ -57,8 +59,13 @@ region = st.sidebar.selectbox(
     ["All"] + list(df['region'].dropna().unique())
 )
 
-# Apply filters
-filtered_df = df[df['year'] == year]
+# ===============================
+# APPLY FILTERS
+# ===============================
+filtered_df = df.copy()
+
+if year != "All":
+    filtered_df = filtered_df[filtered_df['year'] == year]
 
 if region != "All":
     filtered_df = filtered_df[filtered_df['region'] == region]
@@ -79,15 +86,22 @@ col3.metric("🧾 Total Orders", total_orders)
 st.markdown("---")
 
 # ===============================
-# SALES OVER TIME
+# SALES TREND
 # ===============================
 st.subheader("📅 Sales Trend")
 
 sales_trend = filtered_df.groupby('month')['sales'].sum()
 
 fig1, ax1 = plt.subplots()
-sns.lineplot(x=sales_trend.index, y=sales_trend.values, marker='o', ax=ax1)
+sns.lineplot(
+    x=sales_trend.index,
+    y=sales_trend.values,
+    marker='o',
+    linewidth=2.5,
+    ax=ax1
+)
 
+ax1.set_title("Sales Trend", color='white')
 ax1.set_xlabel("Month")
 ax1.set_ylabel("Sales")
 
@@ -101,9 +115,15 @@ st.subheader("🌍 Profit by Region")
 region_profit = filtered_df.groupby('region')['profit'].sum()
 
 fig2, ax2 = plt.subplots()
-sns.barplot(x=region_profit.index, y=region_profit.values, ax=ax2)
+sns.barplot(
+    x=region_profit.index,
+    y=region_profit.values,
+    palette="viridis",
+    ax=ax2
+)
 
 plt.xticks(rotation=45)
+ax2.set_title("Profit by Region", color='white')
 
 st.pyplot(fig2)
 
@@ -113,7 +133,15 @@ st.pyplot(fig2)
 st.subheader("💸 Discount vs Profit")
 
 fig3, ax3 = plt.subplots()
-sns.scatterplot(x=filtered_df['discount'], y=filtered_df['profit'], ax=ax3)
+sns.scatterplot(
+    x=filtered_df['discount'],
+    y=filtered_df['profit'],
+    hue=filtered_df['region'],
+    palette="coolwarm",
+    ax=ax3
+)
+
+ax3.set_title("Discount vs Profit", color='white')
 
 st.pyplot(fig3)
 
