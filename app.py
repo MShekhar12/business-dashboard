@@ -12,7 +12,7 @@ df['day']= df['order_date'].dt.day
 df['sales'] = pd.to_numeric(df['sales'], errors='coerce')
 st.title("smart buisness dashboard")
 st.write("Total sales:",round(df['sales'].sum(),2))
-st.write("Total profit:",round(df['profit'],sum(),2))
+st.write("Total profit:",round(df['profit'].sum(),2))
 
 st.subheader("Sales by Category")
 category_sales = df.groupby('category')['sales'].sum()
