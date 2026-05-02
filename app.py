@@ -12,15 +12,18 @@ import time
 st.set_page_config(page_title="Business Dashboard", layout="wide")
 
 # ===============================
-# PREMIUM CSS + FONTS
+# FIXED CSS (IMPORTANT)
 # ===============================
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-html, body, [class*="css"]  {
+/* Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
 }
 
+/* Background */
 .main {
     background-color: #0F172A;
 }
@@ -33,7 +36,7 @@ html, body, [class*="css"]  {
     box-shadow: 0 6px 24px rgba(0,0,0,0.35);
 }
 
-/* KPI text */
+/* KPI */
 .metric {
     font-size: 30px;
     font-weight: 700;
@@ -43,7 +46,6 @@ html, body, [class*="css"]  {
 .subtext {
     color: #94A3B8;
     font-size: 13px;
-    margin-bottom: 8px;
 }
 
 /* Headings */
@@ -51,22 +53,21 @@ h1, h2, h3 {
     color: #E2E8F0;
 }
 
-/* Remove Streamlit UI */
-#MainMenu, footer, header {
-    visibility: hidden;
-}
+/* Hide Streamlit UI */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 # ===============================
-# CHART STYLE (COMPANY COLORS)
+# STYLE
 # ===============================
 plt.style.use('dark_background')
-sns.set_style("darkgrid")
 sns.set_palette(["#14B8A6", "#38BDF8", "#6366F1"])
 
 # ===============================
-# LOADING EFFECT
+# LOADING
 # ===============================
 with st.spinner("Analyzing business data..."):
     time.sleep(1)
@@ -89,8 +90,11 @@ df['profit'] = pd.to_numeric(df['profit'], errors='coerce')
 df['year'] = df['order_date'].dt.year
 df['month'] = df['order_date'].dt.month
 
+# Convert month number → name (fix ugly 11.0 issue)
+df['month_name'] = df['order_date'].dt.strftime('%b')
+
 # ===============================
-# SIDEBAR FILTERS
+# SIDEBAR
 # ===============================
 st.sidebar.header("Filters")
 
@@ -107,45 +111,42 @@ if region != "All":
     filtered_df = filtered_df[filtered_df['region'] == region]
 
 # ===============================
-# KPI COLOR
-# ===============================
-def color_metric(value):
-    return "#14B8A6" if value > 0 else "#EF4444"
-
-# ===============================
 # KPIs
 # ===============================
 total_sales = round(filtered_df['sales'].sum(), 2)
 total_profit = round(filtered_df['profit'].sum(), 2)
 total_orders = filtered_df.shape[0]
 
+def color_metric(value):
+    return "#14B8A6" if value > 0 else "#EF4444"
+
 col1, col2, col3 = st.columns(3)
 
 col1.markdown(f"""
 <div class='card'>
 <div class='subtext'>Total Sales</div>
-<div class='metric'>${total_sales}</div>
+<div class='metric'>${total_sales:,.0f}</div>
 </div>
 """, unsafe_allow_html=True)
 
 col2.markdown(f"""
 <div class='card'>
 <div class='subtext'>Total Profit</div>
-<div class='metric' style='color:{color_metric(total_profit)};'>${total_profit}</div>
+<div class='metric' style='color:{color_metric(total_profit)};'>${total_profit:,.0f}</div>
 </div>
 """, unsafe_allow_html=True)
 
 col3.markdown(f"""
 <div class='card'>
 <div class='subtext'>Total Orders</div>
-<div class='metric'>{total_orders}</div>
+<div class='metric'>{total_orders:,}</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ===============================
 # INSIGHTS
 # ===============================
-monthly_sales = filtered_df.groupby('month')['sales'].sum()
+monthly_sales = filtered_df.groupby('month_name')['sales'].sum()
 best_month = monthly_sales.idxmax()
 worst_month = monthly_sales.idxmin()
 
@@ -161,12 +162,12 @@ corr = filtered_df[['discount', 'profit']].corr().iloc[0,1]
 st.markdown("## Executive Summary")
 
 summary = f"""
-In {year if year!='All' else 'all selected years'}, the business generated ${total_sales} in sales 
-and ${total_profit} in profit.
+In {year if year!='All' else 'all years'}, the business generated ${total_sales:,.0f} in sales 
+and ${total_profit:,.0f} in profit.
 
 The strongest region is {best_region}, while {worst_region} requires attention.
 
-Sales peaked in month {best_month}, indicating demand patterns.
+Sales peaked in {best_month}, indicating demand patterns.
 
 Discount vs profit correlation is {round(corr,2)}, suggesting 
 {'discounting is reducing profitability' if corr < 0 else 'discounting remains stable'}.
@@ -188,7 +189,7 @@ with tab1:
     with colA:
         st.subheader("Sales Trend")
         fig1, ax1 = plt.subplots()
-        sns.lineplot(x=monthly_sales.index, y=monthly_sales.values, marker='o', linewidth=2.5, ax=ax1)
+        sns.lineplot(x=monthly_sales.index, y=monthly_sales.values, marker='o', ax=ax1)
         st.pyplot(fig1)
 
     with colB:
@@ -214,20 +215,20 @@ with tab3:
     st.subheader("Future Sales Prediction")
 
     if len(monthly_sales) > 1:
-        x = np.array(monthly_sales.index)
-        y = np.array(monthly_sales.values)
+        x = np.arange(len(monthly_sales))
+        y = monthly_sales.values
 
         coeff = np.polyfit(x, y, 1)
         poly = np.poly1d(coeff)
 
-        future_months = np.arange(1, 13)
-        predicted = poly(future_months)
+        future_x = np.arange(len(monthly_sales) + 3)
+        predicted = poly(future_x)
 
         fig4, ax4 = plt.subplots()
-        ax4.plot(x, y, label="Actual", marker='o')
-        ax4.plot(future_months, predicted, linestyle="dashed", label="Predicted")
-
+        ax4.plot(x, y, marker='o', label="Actual")
+        ax4.plot(future_x, predicted, linestyle="dashed", label="Forecast")
         ax4.legend()
+
         st.pyplot(fig4)
 
 # ===============================
@@ -240,4 +241,4 @@ st.download_button("Download Data", csv, "filtered_data.csv")
 # FOOTER
 # ===============================
 st.markdown("---")
-st.caption("Business Intelligence Dashboard | Built with Python and Streamlit")
+st.caption("Business Intelligence Dashboard")
