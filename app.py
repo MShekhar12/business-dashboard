@@ -10,7 +10,7 @@ import os
 st.set_page_config(page_title="Business Dashboard", layout="wide")
 
 # ===============================
-# CUSTOM CSS (PREMIUM LOOK)
+# CUSTOM CSS (PREMIUM UI)
 # ===============================
 st.markdown("""
 <style>
@@ -71,7 +71,7 @@ st.markdown("### Real-time insights for smarter decisions")
 st.markdown("---")
 
 # ===============================
-# SIDEBAR
+# SIDEBAR FILTERS
 # ===============================
 st.sidebar.header("🔍 Filters")
 
@@ -81,7 +81,7 @@ year = st.sidebar.selectbox("Select Year", ["All"] + list(years))
 region = st.sidebar.selectbox("Select Region", ["All"] + list(df['region'].dropna().unique()))
 
 # ===============================
-# FILTER DATA
+# APPLY FILTERS
 # ===============================
 filtered_df = df.copy()
 
@@ -92,7 +92,7 @@ if region != "All":
     filtered_df = filtered_df[filtered_df['region'] == region]
 
 # ===============================
-# KPIs (PREMIUM CARDS)
+# KPIs
 # ===============================
 total_sales = round(filtered_df['sales'].sum(), 2)
 total_profit = round(filtered_df['profit'].sum(), 2)
@@ -124,53 +124,67 @@ with col3:
     </div>
     """, unsafe_allow_html=True)
 
+# ===============================
+# 🧠 SMART INSIGHTS
+# ===============================
+st.markdown("## 🧠 Key Insights")
+
+if not filtered_df.empty:
+
+    monthly_sales = filtered_df.groupby('month')['sales'].sum()
+    best_month = monthly_sales.idxmax()
+    worst_month = monthly_sales.idxmin()
+
+    region_profit = filtered_df.groupby('region')['profit'].sum()
+    best_region = region_profit.idxmax()
+    worst_region = region_profit.idxmin()
+
+    corr = filtered_df[['discount', 'profit']].corr().iloc[0,1]
+    total_profit_val = filtered_df['profit'].sum()
+
+    st.markdown(f"""
+    <div class="card">
+    <b>Business Summary</b><br><br>
+
+    📈 Peak Sales Month: {best_month}<br>
+    📉 Weak Month: {worst_month}<br><br>
+
+    💰 Best Region: {best_region}<br>
+    ⚠️ Weak Region: {worst_region}<br><br>
+
+    📊 Discount vs Profit Correlation: {round(corr,2)}<br>
+    {"High discounts are reducing profit 💸" if corr < 0 else "Discount strategy is stable 👍"}<br><br>
+
+    {"🟢 Overall business is profitable" if total_profit_val > 0 else "🔴 Business is in loss"}
+    </div>
+    """, unsafe_allow_html=True)
+
 st.markdown("## 📈 Performance Overview")
 
 # ===============================
-# LAYOUT (2 COLUMN GRID)
+# LAYOUT
 # ===============================
 left, right = st.columns(2)
 
-# -------------------------------
-# SALES TREND
-# -------------------------------
+# Sales Trend
 with left:
     st.subheader("Sales Trend")
-
     sales_trend = filtered_df.groupby('month')['sales'].sum()
 
     fig1, ax1 = plt.subplots()
-    sns.lineplot(
-        x=sales_trend.index,
-        y=sales_trend.values,
-        marker='o',
-        linewidth=3,
-        ax=ax1
-    )
-
-    ax1.set_xlabel("Month")
-    ax1.set_ylabel("Sales")
+    sns.lineplot(x=sales_trend.index, y=sales_trend.values, marker='o', linewidth=3, ax=ax1)
 
     st.pyplot(fig1)
 
-# -------------------------------
-# REGION PROFIT
-# -------------------------------
+# Profit by Region
 with right:
     st.subheader("Profit by Region")
-
     region_profit = filtered_df.groupby('region')['profit'].sum()
 
     fig2, ax2 = plt.subplots()
-    sns.barplot(
-        x=region_profit.index,
-        y=region_profit.values,
-        palette="viridis",
-        ax=ax2
-    )
+    sns.barplot(x=region_profit.index, y=region_profit.values, palette="viridis", ax=ax2)
 
     plt.xticks(rotation=45)
-
     st.pyplot(fig2)
 
 # ===============================
@@ -178,9 +192,7 @@ with right:
 # ===============================
 left2, right2 = st.columns(2)
 
-# -------------------------------
-# SCATTER
-# -------------------------------
+# Scatter
 with left2:
     st.subheader("Discount vs Profit")
 
@@ -195,9 +207,7 @@ with left2:
 
     st.pyplot(fig3)
 
-# -------------------------------
-# TOP PRODUCTS
-# -------------------------------
+# Top Products
 with right2:
     st.subheader("Top Products")
 
